@@ -1,6 +1,8 @@
 package com.cloudbees.jenkins.plugins.amazonecs;
 
 import static org.junit.Assert.assertEquals;
+
+import hudson.model.Node;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -11,7 +13,7 @@ public class ECSTaskTemplateTest {
 
     ECSTaskTemplate getParent() {
         return new ECSTaskTemplate(
-                "parent-name", "parent-label",
+                "parent-name", "parent-label", null,
                 null, null, null, "parent-image", "parent-repository-credentials", "FARGATE", "LINUX", "X86_64",false, null, "parent-network-mode", "parent-remoteFSRoot",
                 false, null, 0, 0, 0, null, null, null, false, false,
                 "parent-containerUser", "parent-kernelCapabilities", null, new ArrayList<>(), null, null, null, null, null, null,null, null, null, null, 0, false);
@@ -19,7 +21,7 @@ public class ECSTaskTemplateTest {
 
     ECSTaskTemplate getChild(String parent) {
         return new ECSTaskTemplate(
-                "child-name", "child-label",
+                "child-name", "child-label", Node.Mode.EXCLUSIVE,
                 null, null, null, "child-image", "child-repository-credentials", "EC2", "LINUX", "X86_64",false, null, "child-network-mode", "child-remoteFSRoot",
                 false, null, 0, 0, 0, null, null, null, false, false,
                 "child-containerUser", "child-kernelCapabilities", null, new ArrayList<>(), null, null, null, null, null, null,null, null, null, parent, 0, false);
@@ -32,7 +34,7 @@ public class ECSTaskTemplateTest {
         ECSTaskTemplate child = getChild("parent");
 
         ECSTaskTemplate expected = new ECSTaskTemplate(
-            "child-name", "child-label",
+            "child-name", "child-label", Node.Mode.EXCLUSIVE,
             null, null, null, "child-image", "child-repository-credentials", "EC2", "LINUX", "X86_64",false, null, "child-network-mode", "child-remoteFSRoot",
             false, null, 0, 0, 0, null, null, null, false, false,
             "child-containerUser", "child-kernelCapabilities", null, new ArrayList<>(), null, null, null, null, null, null,null, null, null, null, 0, false);
@@ -49,7 +51,7 @@ public class ECSTaskTemplateTest {
         ECSTaskTemplate child = getChild("parent");
 
         ECSTaskTemplate expected = new ECSTaskTemplate(
-            "child-name", "child-label",
+            "child-name", "child-label", null,
             null, null, null, "child-image", "child-repository-credentials", "EC2", "LINUX", "X86_64",false, null, "child-network-mode", "child-remoteFSRoot",
             false, null, 0, 0, 0, null, null, null, false, false,
             "child-containerUser", "child-kernelCapabilities", null, new ArrayList<>(), null, null, null, null, null, null,null, null, null, null, 0, false);
@@ -65,7 +67,7 @@ public class ECSTaskTemplateTest {
         ECSTaskTemplate child = getChild(null);
 
         ECSTaskTemplate expected = new ECSTaskTemplate(
-            "child-name", "child-label",
+            "child-name", "child-label", null,
             null, null, null, "child-image", "child-repository-credentials", "EC2", "LINUX", "X86_64",false, null, "child-network-mode", "child-remoteFSRoot",
             false, null, 0, 0, 0, null, null, null, false, false,
             "child-containerUser", "child-kernelCapabilities", null, new ArrayList<>(), null, null, null, null, null, null,null, null, null, null, 0, false);
@@ -83,7 +85,7 @@ public class ECSTaskTemplateTest {
         ECSTaskTemplate child = getChild("parent");
 
         ECSTaskTemplate expected = new ECSTaskTemplate(
-                "child-name", "child-label",
+                "child-name", "child-label", Node.Mode.EXCLUSIVE,
                 null, null, null, "child-image", "child-repository-credentials", "EC2", "LINUX", "X86_64",false, null, "child-network-mode", "child-remoteFSRoot",
                 false, null, 0, 0, 0, null, null, null, false, false,
                 "child-containerUser", "child-kernelCapabilities", null, new ArrayList<>(), null, null, null, null, null, null,null, null, null, null, 0, false);

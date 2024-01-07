@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import com.amazonaws.services.ecs.model.ClientException;
 
 import com.amazonaws.services.ecs.model.Task;
+import hudson.model.Node;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,6 +27,7 @@ public class ECSSlaveTest {
         return new ECSTaskTemplate(
                 "templateName",
                 "label",
+                Node.Mode.EXCLUSIVE,
                 "agentContainerName",
                 "taskDefinitionOverride",
                 null,

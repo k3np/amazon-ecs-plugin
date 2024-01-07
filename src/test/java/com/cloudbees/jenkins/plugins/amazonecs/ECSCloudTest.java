@@ -2,6 +2,7 @@ package com.cloudbees.jenkins.plugins.amazonecs;
 
 
 import com.amazonaws.services.ecs.model.TaskDefinition;
+import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
 import hudson.slaves.NodeProvisioner.PlannedNode;
 import static junit.framework.TestCase.assertEquals;
@@ -61,6 +62,24 @@ public class ECSCloudTest {
         boolean canProvision = sut.canProvision(new LabelAtom("unknownLabel"));
 
         Assert.assertFalse(canProvision);
+    }
+
+    @Test
+    public void canProvision_noLabel_InNormalMode_returnsTrue() {
+
+        ECSCloud sut = new ECSCloud("mycloud", "", "", "mycluster");
+
+        sut.addTemplate(getTaskTemplate("normal-mode-template", "template-default", Node.Mode.NORMAL));
+
+        sut.setRegionName("eu-west-1");
+        sut.setNumExecutors(1);
+        sut.setJenkinsUrl("http://jenkins.local");
+        sut.setSlaveTimeoutInSeconds(5);
+        sut.setRetentionTimeout(5);
+
+        boolean canProvision = sut.canProvision((LabelAtom) null);
+
+        Assert.assertTrue(canProvision);
     }
 
     @Test
@@ -268,10 +287,16 @@ public class ECSCloudTest {
     private ECSTaskTemplate getTaskTemplate() {
         return getTaskTemplate(UUID.randomUUID().toString(),UUID.randomUUID().toString());
     }
+
     private ECSTaskTemplate getTaskTemplate(String templateName, String label) {
+        return getTaskTemplate(templateName, label, Node.Mode.EXCLUSIVE);
+    }
+
+    private ECSTaskTemplate getTaskTemplate(String templateName, String label, Node.Mode mode) {
         return new ECSTaskTemplate(
                 templateName,
                 label,
+                mode,
                 "",
                 "",
                 null,

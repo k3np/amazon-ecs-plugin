@@ -63,6 +63,7 @@ import hudson.RelativePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Label;
+import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
@@ -95,6 +96,17 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
      * Template Name
      */
     private final String templateName;
+
+    /**
+     * The mode controlling how Jenkins allocates jobs to agents.
+     * Can be either `normal' (use this node as much as possible)
+     * or `exclusive' (only build jobs with label expressions matching this node)
+     *
+     * @see Node.Mode
+     */
+    @CheckForNull
+    private final Node.Mode mode;
+
     /**
      * White-space separated list of {@link hudson.model.Node} labels.
      *
@@ -356,6 +368,7 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
     @DataBoundConstructor
     public ECSTaskTemplate(String templateName,
                            @Nullable String label,
+                           @Nullable Node.Mode mode,
                            @Nullable String agentContainerName,
                            @Nullable String taskDefinitionOverride,
                            @Nullable String dynamicTaskDefinitionOverride,
@@ -420,6 +433,7 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
         }
 
         this.label = label;
+        this.mode = mode;
         this.image = image;
         this.repositoryCredentials = StringUtils.trimToNull(repositoryCredentials);
         this.remoteFSRoot = remoteFSRoot;
@@ -534,6 +548,10 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
 
     public boolean isEC2() {
         return StringUtils.trimToNull(this.launchType) != null && launchType.equals(LaunchType.EC2.toString());
+    }
+
+    public Node.Mode getMode() {
+        return mode;
     }
 
     public String getLabel() {
@@ -669,7 +687,6 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
         return cpuArchitecture;
     }
 
-
     public String getNetworkMode() {
         return networkMode;
     }
@@ -698,6 +715,8 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
             }
         }).collect(Collectors.joining("\n"));
     }
+
+
 
     public static class LogDriverOption extends AbstractDescribableImpl<LogDriverOption> implements Serializable {
         private static final long serialVersionUID = 8585792353105873086L;
@@ -836,6 +855,7 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
         }
         String templateName = isNullOrEmpty(this.templateName) ? parent.getTemplateName() : this.templateName;
         String label = isNullOrEmpty(this.label) ? parent.getLabel() : this.label;
+        Node.Mode mode = this.mode == null ? parent.mode : this.mode;
         String agentContainerName = isNullOrEmpty(this.agentContainerName) ? parent.getAgentContainerName() : this.agentContainerName;
         String taskDefinitionOverride = isNullOrEmpty(this.taskDefinitionOverride) ? parent.getTaskDefinitionOverride() : this.taskDefinitionOverride;
         String image = isNullOrEmpty(this.image) ? parent.getImage() : this.image;
@@ -887,6 +907,7 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
 
         ECSTaskTemplate merged = new ECSTaskTemplate(templateName,
                                                        label,
+                                                       mode,
                                                        agentContainerName,
                                                        taskDefinitionOverride,
                                                        null,
@@ -1474,6 +1495,14 @@ public class ECSTaskTemplate extends AbstractDescribableImpl<ECSTaskTemplate> im
         @Override
         public String getDisplayName() {
             return com.cloudbees.jenkins.plugins.amazonecs.Messages.template();
+        }
+
+        public ListBoxModel doFillModeItems() {
+            final ListBoxModel options = new ListBoxModel();
+            for (Node.Mode mode: Node.Mode.values()) {
+                options.add(mode.getDescription(), mode.name());
+            }
+            return options;
         }
 
         public ListBoxModel doFillLaunchTypeItems() {

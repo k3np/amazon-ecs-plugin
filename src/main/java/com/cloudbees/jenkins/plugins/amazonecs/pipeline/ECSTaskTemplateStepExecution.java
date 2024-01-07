@@ -54,6 +54,7 @@ public class ECSTaskTemplateStepExecution extends AbstractStepExecutionImpl {
 
         newTemplate = new ECSTaskTemplate(name,
                                           step.getLabel(),
+                                          step.getMode(),
                                           step.getAgentContainerName(),
                                           step.getTaskDefinitionOverride(),
                                           null,

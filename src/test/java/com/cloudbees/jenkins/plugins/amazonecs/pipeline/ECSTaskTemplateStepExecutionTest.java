@@ -3,6 +3,7 @@ package com.cloudbees.jenkins.plugins.amazonecs.pipeline;
 import com.cloudbees.jenkins.plugins.amazonecs.ECSCloud;
 import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate;
 import com.cloudbees.jenkins.plugins.amazonecs.SerializableSupplier;
+import hudson.model.Node;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
 import org.jenkinsci.plugins.workflow.steps.BodyInvoker;
@@ -67,6 +68,7 @@ public class ECSTaskTemplateStepExecutionTest {
         ECSTaskTemplate expected = new ECSTaskTemplate(
                 "template-name",
                 "child-label",
+                Node.Mode.EXCLUSIVE,
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 null,
@@ -160,6 +162,7 @@ public class ECSTaskTemplateStepExecutionTest {
         return new ECSTaskTemplate(
                 templateName,
                 label,
+                Node.Mode.EXCLUSIVE,
                 "",
                 "",
                 null,
