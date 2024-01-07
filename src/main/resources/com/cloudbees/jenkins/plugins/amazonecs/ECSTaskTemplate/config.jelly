@@ -28,6 +28,9 @@
   <f:entry title="Label" field="label" description="Labels used to identify this agent in Jenkins, which must be separated by a space. For example, `java11 alpine` would assign two labels to the agent: `java11` and `alpine`.">
     <f:textbox />
   </f:entry>
+  <f:entry title="Mode" field="mode" description="The mode controlling how Jenkins allocates jobs to agents. Can be either `normal' (use this node as much as possible) or `exclusive' (only build jobs with label expressions matching this node)">
+    <f:select default="EXCLUSIVE" />
+  </f:entry>
   <f:entry title="${%Template Name}" field="templateName" description="The name that will be appended to the ECS cluster name when creating task definitions. Cannot be used with a Task Definition Override.">
       <f:textbox />
     </f:entry>

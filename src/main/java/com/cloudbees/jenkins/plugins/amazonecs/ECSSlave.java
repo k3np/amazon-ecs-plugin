@@ -99,7 +99,7 @@ public class ECSSlave extends AbstractCloudSlave {
             "ECS Agent",
             template.makeRemoteFSRoot(name),
             1,
-            Mode.EXCLUSIVE,
+            template.getMode(),
             template.getLabel(),
             launcher,
             cloud.getRetainAgents() ?

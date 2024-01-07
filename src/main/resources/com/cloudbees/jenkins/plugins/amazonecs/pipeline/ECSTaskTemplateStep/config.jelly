@@ -31,6 +31,9 @@
   <f:entry title="Label" field="label" description="The label used to identify this slave in Jenkins.">
     <f:textbox />
   </f:entry>
+  <f:entry title="Mode" field="mode" description="The mode controlling how Jenkins allocates jobs to agents. Can be either `normal' (use this node as much as possible) or `exclusive' (only build jobs with label expressions matching this node)">
+    <f:select default="EXCLUSIVE" />
+  </f:entry>
   <f:entry field="inheritFrom" title="${%Task template to inherit from}">
     <f:textbox/>
   </f:entry>

@@ -117,7 +117,7 @@ public class ECSCloud extends Cloud {
         Cloud cloud = Jenkins.get().clouds.getByName(name);
         if (cloud instanceof ECSCloud) return (ECSCloud) cloud;
         throw new IllegalArgumentException("'" + name + "' is not an ECS cloud but " + cloud);
-        }
+    }
 
     synchronized ECSService getEcsService() {
         if (ecsService == null) {
@@ -128,7 +128,7 @@ public class ECSCloud extends Cloud {
 
     @Nonnull
     public List<ECSTaskTemplate> getTemplates() {
-        return templates != null ? templates : Collections.<ECSTaskTemplate> emptyList();
+        return templates != null ? templates : Collections.<ECSTaskTemplate>emptyList();
     }
 
     @Nonnull
@@ -233,6 +233,11 @@ public class ECSCloud extends Cloud {
 
     private ECSTaskTemplate getTemplate(Label label) {
         if (label == null) {
+            for (ECSTaskTemplate t : getAllTemplates()) {
+                if (t.getMode() == Node.Mode.NORMAL) {
+                    return t;
+                }
+            }
             return null;
         }
         for (ECSTaskTemplate t : getAllTemplates()) {
@@ -245,7 +250,7 @@ public class ECSCloud extends Cloud {
 
     public ECSTaskTemplate getTemplate(String label) {
         return Optional.ofNullable(label).map(Label::parse).flatMap(atoms ->
-            getAllTemplates().stream().filter(t -> t.getLabelSet().stream().anyMatch(l -> l.matches(atoms))).findFirst()
+                getAllTemplates().stream().filter(t -> t.getLabelSet().stream().anyMatch(l -> l.matches(atoms))).findFirst()
         ).orElse(null);
     }
 
@@ -257,10 +262,10 @@ public class ECSCloud extends Cloud {
      */
     public ECSTaskTemplate findParentTemplate(String parentLabel) {
         ECSTaskTemplate result = null;
-        if(parentLabel == null){
+        if (parentLabel == null) {
             LOGGER.log(Level.INFO, "No parent label supplied, looking for TaskTemplate with label 'template-default'");
             result = this.getTemplate("template-default");
-            if(result == null) {
+            if (result == null) {
                 LOGGER.log(Level.INFO, "No task template label of 'template-default' found, searching by name 'template-default'");
                 result = this.getTemplateByName("template-default");
             }
@@ -284,8 +289,8 @@ public class ECSCloud extends Cloud {
             final ECSTaskTemplate merged = template.merge(getTemplate(parentLabel));
 
             for (int i = 1; i <= excessWorkload; i++) {
-                String agentName = name + "-" + label.getName() + "-" + RandomStringUtils.random(5, "bcdfghjklmnpqrstvwxz0123456789");
-                LOGGER.log(Level.INFO, "Will provision {0}, for label: {1}", new Object[]{agentName, label} );
+                String agentName = name + "-" + (label != null ? label.getName() + "-" : "") + RandomStringUtils.random(5, "bcdfghjklmnpqrstvwxz0123456789");
+                LOGGER.log(Level.INFO, "Will provision {0}, for label: {1}", new Object[]{agentName, label});
                 result.add(
                         new NodeProvisioner.PlannedNode(
                                 agentName,
@@ -442,7 +447,7 @@ public class ECSCloud extends Cloud {
 
     @DataBoundSetter
     public void setJenkinsUrl(String jenkinsUrl) {
-        if(StringUtils.isNotBlank(jenkinsUrl)) {
+        if (StringUtils.isNotBlank(jenkinsUrl)) {
             this.jenkinsUrl = jenkinsUrl;
         } else {
             JenkinsLocationConfiguration config = JenkinsLocationConfiguration.get();
@@ -455,15 +460,15 @@ public class ECSCloud extends Cloud {
     /**
      * Adds a dynamic task template. Won't be displayed in UI, and persisted
      * separately from the cloud instance. Also creates a task definition for this
-     * template, adding the ARN to back to the template so that we can delete the 
+     * template, adding the ARN to back to the template so that we can delete the
      * exact task created once complete.
-     * 
+     *
      * @param template the template to add
      * @return the task template with the newly created task definition ARN added
      */
     public ECSTaskTemplate addDynamicTemplate(ECSTaskTemplate template) {
         TaskDefinition taskDefinition = getEcsService().registerTemplate(this.getDisplayName(), template);
-        if(taskDefinition != null){
+        if (taskDefinition != null) {
             LOGGER.log(Level.INFO, String.format("Task definition created or found: ARN: %s", taskDefinition.getTaskDefinitionArn()));
             template.setDynamicTaskDefinition(taskDefinition.getTaskDefinitionArn());
             TaskTemplateMap.get().addTemplate(this, template);
@@ -473,9 +478,10 @@ public class ECSCloud extends Cloud {
 
     /**
      * Remove a dynamic task template.
+     *
      * @param template the template to remove
      */
-    public void removeDynamicTemplate(ECSTaskTemplate template) {	
+    public void removeDynamicTemplate(ECSTaskTemplate template) {
         getEcsService().removeTemplate(template);
 
         TaskTemplateMap.get().removeTemplate(this, template);
@@ -544,7 +550,7 @@ public class ECSCloud extends Cloud {
         }
 
         public FormValidation doCheckRetentionTimeout(@QueryParameter Integer value) throws IOException, ServletException {
-           if (value > 0) {
+            if (value > 0) {
                 return FormValidation.ok();
             }
             return FormValidation.error("Needs to be greater than 0");

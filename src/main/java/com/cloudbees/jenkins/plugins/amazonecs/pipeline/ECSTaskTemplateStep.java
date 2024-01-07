@@ -1,13 +1,18 @@
 package com.cloudbees.jenkins.plugins.amazonecs.pipeline;
 
 
+import com.amazonaws.services.ecs.model.LaunchType;
+import com.amazonaws.services.ecs.model.NetworkMode;
 import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate;
+import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.*;
 import com.cloudbees.jenkins.plugins.amazonecs.SerializableSupplier;
+import com.google.common.collect.ImmutableSet;
 import hudson.Extension;
+import hudson.model.Node;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
@@ -17,31 +22,16 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-
-import com.amazonaws.services.ecs.model.LaunchType;
-import com.amazonaws.services.ecs.model.NetworkMode;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.EFSMountPointEntry;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.EnvironmentEntry;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.ExtraHostEntry;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.LogDriverOption;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.Tag;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.MountPointEntry;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.PortMappingEntry;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.PlacementStrategyEntry;
-import com.cloudbees.jenkins.plugins.amazonecs.ECSTaskTemplate.CapacityProviderStrategyEntry;
-import com.google.common.collect.ImmutableSet;
-import hudson.model.Run;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import javax.servlet.ServletException;
 
 public class ECSTaskTemplateStep extends Step implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -50,6 +40,7 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
     private final String DEFAULT_CLOUD = "cloud-default";
     private final String label;
     private final String name;
+    private Node.Mode mode = Node.Mode.EXCLUSIVE;
     private String cloud = DEFAULT_CLOUD;
     private String agentContainerName;
     private String taskDefinitionOverride;
@@ -105,6 +96,15 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    @DataBoundSetter
+    public void setMode(Node.Mode mode) {
+        this.mode = mode;
+    }
+
+    public Node.Mode getMode() {
+        return mode;
     }
 
     @DataBoundSetter
@@ -213,7 +213,7 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
     }
 
     public String getPlatformVersion() {
-        return platformVersion  ;
+        return platformVersion;
     }
 
     @DataBoundSetter
@@ -457,7 +457,7 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
     public void setCapacityProviderStrategies(List<CapacityProviderStrategyEntry> capacityProviderStrategies) {
         this.capacityProviderStrategies = capacityProviderStrategies;
     }
-    
+
 
     @DataBoundSetter
     public void setOverrides(List<String> overrides) {
@@ -472,7 +472,7 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
     public StepExecution start(StepContext stepContext) throws Exception {
         LOGGER.log(Level.FINE, "In ECSTaskTemplateStep start. label: {0}", label);
         LOGGER.log(Level.FINE, "In ECSTaskTemplateStep start. cloud: {0}", cloud);
-        return new ECSTaskTemplateStepExecution(this, stepContext, (SerializableSupplier<Jenkins.CloudList>)() -> Jenkins.get().clouds);
+        return new ECSTaskTemplateStepExecution(this, stepContext, (SerializableSupplier<Jenkins.CloudList>) () -> Jenkins.get().clouds);
     }
 
     @Extension(optional = true)
@@ -501,6 +501,13 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
             return ImmutableSet.of(Run.class, TaskListener.class);
         }
 
+        public ListBoxModel doFillModeItems() {
+            final ListBoxModel options = new ListBoxModel();
+            for (Node.Mode mode: Node.Mode.values()) {
+                options.add(mode.getDescription(), mode.name());
+            }
+            return options;
+        }
         public ListBoxModel doFillLaunchTypeItems() {
             final ListBoxModel options = new ListBoxModel();
             for (LaunchType launchType : LaunchType.values()) {
@@ -525,7 +532,7 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
         }
 
         public FormValidation doCheckSubnetsLaunchType(@QueryParameter("subnets") String subnets,
-                @QueryParameter("launchType") String launchType) throws IOException, ServletException {
+                                                       @QueryParameter("launchType") String launchType) throws IOException, ServletException {
             if (launchType.contentEquals(LaunchType.FARGATE.toString())) {
                 return FormValidation.error("Subnets need to be set, when using FARGATE");
             }
@@ -533,7 +540,7 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
         }
 
         public FormValidation doCheckSubnetsNetworkMode(@QueryParameter("subnets") String subnets,
-                @QueryParameter("networkMode") String networkMode) throws IOException, ServletException {
+                                                        @QueryParameter("networkMode") String networkMode) throws IOException, ServletException {
             if (networkMode.equals(NetworkMode.Awsvpc.toString()) && subnets.isEmpty()) {
                 return FormValidation.error("Subnets need to be set when using awsvpc network mode");
             }
@@ -542,12 +549,12 @@ public class ECSTaskTemplateStep extends Step implements Serializable {
 
         /* we validate both memory and memoryReservation fields to the same rules */
         public FormValidation doCheckMemory(@QueryParameter("memory") int memory,
-                @QueryParameter("memoryReservation") int memoryReservation) throws IOException, ServletException {
+                                            @QueryParameter("memoryReservation") int memoryReservation) throws IOException, ServletException {
             return validateMemorySettings(memory, memoryReservation);
         }
 
         public FormValidation doCheckMemoryReservation(@QueryParameter("memory") int memory,
-                @QueryParameter("memoryReservation") int memoryReservation) throws IOException, ServletException {
+                                                       @QueryParameter("memoryReservation") int memoryReservation) throws IOException, ServletException {
             return validateMemorySettings(memory, memoryReservation);
         }
 
