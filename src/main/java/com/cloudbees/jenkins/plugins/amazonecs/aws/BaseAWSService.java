@@ -4,8 +4,10 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.retry.RetryPolicy;
 import com.cloudbees.jenkins.plugins.awscredentials.AWSCredentialsHelper;
 import com.cloudbees.jenkins.plugins.awscredentials.AmazonWebServicesCredentials;
+import com.google.common.base.Joiner;
 import hudson.ProxyConfiguration;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -37,12 +39,25 @@ public abstract class BaseAWSService {
             clientConfiguration.setProxyPort(proxy.port);
             clientConfiguration.setProxyUsername(proxy.getUserName());
             clientConfiguration.setProxyPassword(proxy.getPassword());
+            if (proxy.getNoProxyHost() != null) {
+                String[] noProxyParts = proxy.getNoProxyHost().split("[ \t\n,|]+");
+                clientConfiguration.setNonProxyHosts(Joiner.on(',').join(noProxyParts));
+            }
         }
+
+        clientConfiguration.setRetryPolicy(ecsRetryPolicy());
 
         // Default is 3. 10 helps us actually utilize the SDK's backoff strategy
         // The strategy will wait up to 20 seconds per request (after multiple failures)
         clientConfiguration.setMaxErrorRetry(10);
 
         return clientConfiguration;
+    }
+
+    private RetryPolicy ecsRetryPolicy() {
+        return new RetryPolicy(new RetryCondition(),
+                       null,
+                       10,
+                       true);
     }
 }

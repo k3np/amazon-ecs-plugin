@@ -11,7 +11,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -133,7 +133,6 @@ public class ECSCloudTest {
     @Test
     public void removeJunkTemplateProducesNoError() throws Exception {
         ECSService ecsService = mock(ECSService.class);
-        when(ecsService.findTaskDefinition(anyString())).thenReturn(null);
         ECSCloud cloud = new ECSCloud("mycloud", "mycluster", ecsService);
         cloud.setRegionName("us-east-1");
         cloud.removeDynamicTemplate(getTaskTemplate(Math.random() + "", "label1, label2, label3"));
